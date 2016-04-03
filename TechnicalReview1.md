@@ -40,7 +40,6 @@ Ideation Session
 
 Agenda for Technical Review Session
 - 2 min Introduce Background and Context
-- 5 min Discuss Homework
 - 7 min Ideation Session
 - 7 min Technical Discussion Questions
 - 2 min Thanks and conclusion
