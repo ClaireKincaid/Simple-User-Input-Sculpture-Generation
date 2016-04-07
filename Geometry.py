@@ -90,12 +90,14 @@ class Dilation(object):
     """
 
     def __init__(self, scale_factor = 1, depth = 500):
+        self.center = None
+
         scale_factor = float(scale_factor)
         if scale_factor > 1:
-            self.trans_mat = [1 + i*scale_factor/depth for i in range(depth+1)]
+            self.trans_mat = [[[1 + i*scale_factor/depth,0],[0,1 + i*scale_factor/depth]] for i in range(depth+1)]
         else:
             scale_factor = 1-scale_factor
-            self.trans_mat = [1 - i*scale_factor/depth for i in range(depth+1)]
+            self.trans_mat = [[[1 - i*scale_factor/depth,0],[0,1 - i*scale_factor/depth]] for i in range(depth+1)]
 
 class Animation(object):
     """A collection of polygons and transformations, that can be exported
@@ -105,10 +107,10 @@ class Animation(object):
 
     def __init__(self, polygon = Square(), transformations = [Rotation()]):
         self.shapes = {}
-        self.shapes[polygon] = list(transformations)
+        self.shapes[polygon] = transformations
 
     def add_shape(self, polygon = Square(), transformations = [Rotation()]):
-        self.shapes[polygon] = list(transformations)
+        self.shapes[polygon] = transformations
 
     def render_shapes(self, filename = 'test.scad'):
         final_shapes = []
@@ -125,10 +127,10 @@ class Animation(object):
                 for transformation in transformations[1:]:
                     if type(transformation.center) is not NoneType:
                         new_shape = new_shape - transformation.center.reshape(2,1)
-                        new_shape = np.dot(transformation.trans_mat,new_shape)
+                        new_shape = [np.dot(transformation.trans_mat[i],new_shape[i]) for i in range(len(transformation.trans_mat))]
                         new_shape = new_shape + transformation.center.reshape(2,1)
                     else:
-                        new_shape = np.dot(transformation.trans_mat,new_shape)
+                        new_shape = [np.dot(transformation.trans_mat[i],new_shape[i]) for i in range(len(transformation.trans_mat))]
 
             final_shapes.append(new_shape)
 
@@ -149,14 +151,16 @@ class Animation(object):
 
 if __name__ == '__main__':
     square1 = Square(10, (5,5))
-    square2 = Square(10, (-2.5,-2.5))
+    square2 = Square(10, (-5,-5))
     square3 = Square(7.5, (-1,2))
     square4 = Square(7.5, (1,-2))
 
     rot = Rotation(720)
+    rot2 = Rotation(360)
+    di = Dilation(0.1)
 
-    anim = Animation(square1,[rot])
-    anim.add_shape(square2,[rot])
+    anim = Animation(square1,[rot2])
+    anim.add_shape(square2,[rot2])
     anim.add_shape(square3,[rot])
     anim.add_shape(square4,[rot])
     anim.render_shapes()
