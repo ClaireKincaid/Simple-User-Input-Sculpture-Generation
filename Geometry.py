@@ -12,7 +12,9 @@ import numpy as np
 from math import sqrt
 import solid as sp
 from solid.utils import *
-from types import *
+from types import NoneType
+from matplotlib import pylab
+import cv2
 
 class Polygon(object):
     """Represents a polygon on a plane.
@@ -49,6 +51,7 @@ class n_Sided_Polygon(Polygon):
 
     def __init__(self, N = 3, radius = 1, center = (0,0), angle = 0):
         points = []
+        angle = angle
         for n in range(N):
             x_coord = radius * np.cos(2*pi*n/N + angle) + center[0]
             y_coord = radius * np.sin(2*pi*n/N + angle) + center[1]
@@ -115,13 +118,23 @@ class Animation(object):
     def render_shapes(self, filename = 'test.scad'):
         final_shapes = []
 
+        print "Animating Shapes"
+
         for shape, transformations in self.shapes.items():
+
+            center_transformations = [transformation for transformation in transformations if type(transformation.center) is NoneType]
+            other_transformations  = [transformation for transformation in transformations if transformation not in center_transformations]
+
+            transformations = center_transformations + other_transformations
+
             if type(transformations[0].center) is not NoneType:
                 new_shape = shape.points - transformations[0].center
                 new_shape = np.dot(transformations[0].trans_mat,new_shape.T)
                 new_shape = new_shape + transformations[0].center.reshape(2,1)
             else:
-                new_shape = np.dot(transformations[0].trans_mat,shape.points.transpose())
+                new_shape = shape.points - shape.center
+                new_shape = np.dot(transformations[0].trans_mat,new_shape.transpose())
+                new_shape = new_shape + shape.center.reshape(2,1)
 
             if len(transformations) > 1:
                 for transformation in transformations[1:]:
@@ -130,9 +143,13 @@ class Animation(object):
                         new_shape = [np.dot(transformation.trans_mat[i],new_shape[i]) for i in range(len(transformation.trans_mat))]
                         new_shape = new_shape + transformation.center.reshape(2,1)
                     else:
+                        new_shape = new_shape - shape.center.reshape(2,1)
                         new_shape = [np.dot(transformation.trans_mat[i],new_shape[i]) for i in range(len(transformation.trans_mat))]
+                        new_shape = new_shape + shape.center.reshape(2,1)
 
             final_shapes.append(new_shape)
+        
+        self.final_shapes = final_shapes
 
         shapes_to_export = []
 
@@ -148,19 +165,112 @@ class Animation(object):
         final_export = union()(shapes_to_export)
         scad_render_to_file(final_export,filename)
 
+    def render_points_as_image(self,points,bounds,resolution):
+        """Inputs:
+        Polygon data: a list of coordinates of points that
+        define the corners of a polygon
+
+        Bounds: The top right hand corner of the square inside which all
+        of the points in the polygon data will fit (x,x) (these are technically
+        coordinates, but they should be the same for the sake of squares)
+
+        Resolution: The resolution of the output image; a single number,
+        all output images are square
+
+        Output: a black and white image."""
+
+        output_image = np.zeros((resolution,resolution), dtype=bool)
+
+        step_size = bounds[1] * 2.0 / resolution
+
+        #Tack the first point onto the end, to make looping through
+        #adjacent pairs of points easier
+        points = np.append(points,[points[0]],axis = 0)
+
+        #Make sure all points are positive
+        points = points + bounds[1]
+
+        #Scale the points so rounding them to whole numbers will place
+        #them within the output resolution
+        points = points / step_size
+
+        points = np.round(points)
+
+        y_vals = points.T[1]
+
+        for i in range(len(points)-1):
+            p1 = points[i]
+            p2 = points[i+1]
+
+            slope = (p2[1]-p1[1])/(p2[0]-p1[0])
+
+            for y_step in range(int(np.abs(p2[1]-p1[1]))):
+                if slope:
+                    if p2[1] > p1[1]:
+                        new_y = round(p1[1] + y_step)
+                        new_x = round(p1[0] + y_step/slope)
+                    else:
+                        new_y = round(p1[1] - y_step)
+                        new_x = round(p1[0] - y_step/slope)
+
+                    output_image[-new_y][0:new_x] = np.logical_xor(True,output_image[-new_y][0:new_x])
+
+        for point in points[:-1]:
+            if output_image[-point[1]][0]:
+                output_image[-point[1]][0:point[0]] = np.logical_xor(True,output_image[-point[1]][0:point[0]])
+
+        # im = output_image.astype(int)*255
+        # cv2.imshow('image',im.astype('uint8'))
+        # cv2.waitKey(0)
+
+        return output_image
+
+    def render_volume_data(self,bounds,resolution):
+        final_volume = np.zeros((len(self.final_shapes[0]),resolution,resolution), dtype=bool)
+        print "Rendering Volume Data"
+        for shape in self.final_shapes:
+
+            volume_data = []
+
+            for points in shape:
+                image = self.render_points_as_image(points.T,bounds,resolution)
+                volume_data.append(image)
+
+            final_volume = np.logical_or(final_volume,volume_data)
+
+        for layer in final_volume:
+            im = layer.astype(int)*255
+            cv2.imshow('image',im.astype('uint8'))
+            cv2.waitKey(0)
+
+        return final_volume
+
+
+
+
+
 
 if __name__ == '__main__':
-    square1 = Square(10, (5,5))
-    square2 = Square(10, (-5,-5))
-    square3 = Square(7.5, (-1,2))
-    square4 = Square(7.5, (1,-2))
+    square1 = Square(7.5, (5,5))
+    square2 = Square(7.5, (-5,-5))
+    square3 = Square(7.5, (-5,5))
+    square4 = Square(7.5, (5,-5))
+    square5 = Square(7.5, (0,sqrt(50)))
+    square6 = Square(7.5, (0,-sqrt(50)))
+    square7 = Square(7.5, (sqrt(50),0))
+    square8 = Square(7.5, (-sqrt(50),0))
 
-    rot = Rotation(720)
-    rot2 = Rotation(360)
-    di = Dilation(0.1)
+    rot = Rotation(360)
+    rot2 = Rotation(270,(0,0))
 
-    anim = Animation(square1,[rot2])
-    anim.add_shape(square2,[rot2])
-    anim.add_shape(square3,[rot])
-    anim.add_shape(square4,[rot])
+    anim = Animation(square1,[rot2,rot])
+    anim.add_shape(square2,[rot2,rot])
+    anim.add_shape(square3,[rot2,rot])
+    anim.add_shape(square4,[rot,rot2])
+    anim.add_shape(square5,[rot2,rot])
+    anim.add_shape(square6,[rot2,rot])
+    anim.add_shape(square7,[rot,rot2])
+    anim.add_shape(square8,[rot,rot2])
     anim.render_shapes()
+
+    anim.render_volume_data((15,15),240)
