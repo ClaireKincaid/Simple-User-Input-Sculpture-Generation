@@ -8,6 +8,7 @@ As of yet, our program requires the following packages to run correctly:
  - SolidPython
  - OpenCV
  - Numpy
+
 We also recommend downloading and installing OpenSCAD, so you can easily compile an STL using the code we currently have in place.
 
 To install, just download the git repository and use the files locally (or add them to the folder where Python can access them). We're not at a point where we can provide an installer yet.
