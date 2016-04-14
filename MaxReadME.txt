@@ -15,21 +15,8 @@ As of yet, our program requires the following packages to run correctly:
     Mayavi
     numpy-stl
     noise
-    pyglet
-
-sudo pip install solidpython
-
-sudo apt-get install libopencv-dev python-opencv
-sudo apt-get install python-numpy python-scipy
-sudo pip install scikit-image
-sudo pip install mayavi
-sudo pip install numpy-stl
-https://pypi.python.org/pypi/noise/
-https://pypi.python.org/pypi/pyglet/1.2.3
 
 We also recommend downloading and installing OpenSCAD, so you can easily compile an STL using the code we currently have in place.
-
-sudo apt-get install openscad
 
 To install, just download the git repository and use the files locally (or add them to the folder where Python can access them). We're not at a point where we can provide an installer yet.
 Usage
@@ -82,3 +69,4 @@ ctrl+C will exit the program.
 The GUI
 License
 
+How do we want to do this?
