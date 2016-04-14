@@ -72,8 +72,10 @@ class Square(n_Sided_Polygon):
 
 class Rotation(object):
     """A transformation that rotates a shape theta degrees about a given point
+    The rotation scales linearly with respect to z position
+    Stored as a 3D matrix, where each entry in the topmost list is a 2x2 rotation matrix
 
-    Attributes: theta, center
+    Attributes: theta, center, depth
     """
 
     def __init__(self,theta = 0, center = None, depth = 500):
@@ -87,9 +89,11 @@ class Rotation(object):
             self.center = None
 
 class Dilation(object):
-    """A transformation that scales a shape by a given factor
+    """A transformation that scales a shape by a given factor.
+    The dilation scales linearly with respect to z position
+    Stored as 3D matrix, where each entry in the topmost list is a 2x2 scaling matrix
 
-    Attributes: scale_factor
+    Attributes: scale_factor, depth
     """
 
     def __init__(self, scale_factor = 1, depth = 500):
@@ -104,8 +108,10 @@ class Dilation(object):
 
 class Animation(object):
     """A collection of polygons and transformations, that can be exported
-    to an openscad file
+    to an openscad file or as a series of black and white images (volume data)
 
+    Attributes: shapes (a dictionary whose keys are Polygons, and whose values are lists
+    of transformations to apply to that polygon).
     """
 
     def __init__(self, polygon = Square(), transformations = [Rotation()]):
@@ -116,17 +122,26 @@ class Animation(object):
         self.shapes[polygon] = transformations
 
     def render_shapes(self, filename = 'test.scad'):
+        """Uses self.shapes to render a single OpenSCAD file that contains all of the
+        shapes and their applied transformations."""
+        
         final_shapes = []
 
         print "Animating Shapes"
 
         for shape, transformations in self.shapes.items():
 
+            #Transformations that affect Polygons about their center need to be applied before those that rotate about specific points
+            #This is to avoid having to recalculate the centers of shapes
             center_transformations = [transformation for transformation in transformations if type(transformation.center) is NoneType]
             other_transformations  = [transformation for transformation in transformations if transformation not in center_transformations]
 
             transformations = center_transformations + other_transformations
+            
+            #These matrix multiplications use the power of numpy matrix multiplication to very quickly apply transformations
+            #to hundreds of points.
 
+            #transformations[0].center is NoneType if the transformation is centered on the shape's center
             if type(transformations[0].center) is not NoneType:
                 new_shape = shape.points - transformations[0].center
                 new_shape = np.dot(transformations[0].trans_mat,new_shape.T)
@@ -155,13 +170,19 @@ class Animation(object):
 
         for shape in final_shapes:
             solid_shapes = []
+            #This shouldn't be hardcoded to 501...
             for i in range(501):
+                #For each shape (which is stored as a list of points)...
                 solid_shape = shape[i].T.tolist()
+                #Represent it as a polygon...
                 solid_shapes.append(sp.polygon(solid_shape))
+                #Extrude that polygon up .21mm...
                 solid_shapes[i] = sp.linear_extrude(.21)(solid_shapes[i])
+                #Then translate that extrusion up .2mm...
                 solid_shapes[i] = up(i/5.0)(solid_shapes[i])
             shapes_to_export.append(solid_shapes)
 
+        #Then union ALL of the extrudes of EVERY shape
         final_export = union()(shapes_to_export)
         scad_render_to_file(final_export,filename)
 
@@ -177,7 +198,7 @@ class Animation(object):
         Resolution: The resolution of the output image; a single number,
         all output images are square
 
-        Output: a black and white image."""
+        Output: a black and white image (stored as a matrix of Booleans)."""
 
         output_image = np.zeros((resolution,resolution), dtype=bool)
 
@@ -194,28 +215,35 @@ class Animation(object):
         #them within the output resolution
         points = points / step_size
 
+        #Round the points to prevent future rounding errors
         points = np.round(points)
 
-        y_vals = points.T[1]
-
         for i in range(len(points)-1):
+            #For each pair of points
             p1 = points[i]
             p2 = points[i+1]
-
+    
+            #Calculate the slope
             slope = (p2[1]-p1[1])/(p2[0]-p1[0])
 
+            #Then for each step (of 1) in the y-direction from p1 to p2
             for y_step in range(int(np.abs(p2[1]-p1[1]))):
                 if slope:
                     if p2[1] > p1[1]:
+                        #Find which x value corresponds to the new y value (using the slope)
                         new_y = round(p1[1] + y_step)
                         new_x = round(p1[0] + y_step/slope)
                     else:
                         new_y = round(p1[1] - y_step)
                         new_x = round(p1[0] - y_step/slope)
 
+                    #Then invert every pixel to the left of the new point.
+                    #This very nicely fills in the shape, regardless of concavity/convexity.
                     output_image[-new_y][0:new_x] = np.logical_xor(True,output_image[-new_y][0:new_x])
 
         for point in points[:-1]:
+            #The above algorithm consistently leaves a couple corners with lines not inverted correctly
+            #This for loop fixes that with only a small increase in runtime
             if output_image[-point[1]][0]:
                 output_image[-point[1]][0:point[0]] = np.logical_xor(True,output_image[-point[1]][0:point[0]])
 
@@ -226,6 +254,20 @@ class Animation(object):
         return output_image
 
     def render_volume_data(self,bounds,resolution):
+        """Renders the entire animation as volume data using 
+        render_points_as_image()
+        
+        Inputs:
+
+        Bounds: The top right hand corner of the square inside which all
+        of the points of all the polygons will fit (x,x) (these are technically
+        coordinates, but they should be the same for the sake of squares)
+
+        Resolution: The resolution of each output image; a single number,
+        all output images are square
+
+        Output: a list of black and white images (stored as a 3D matrix of Booleans)
+        """
         final_volume = np.zeros((len(self.final_shapes[0]),resolution,resolution), dtype=bool)
         print "Rendering Volume Data"
         for shape in self.final_shapes:
