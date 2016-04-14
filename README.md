@@ -63,6 +63,12 @@ Currently, the 'i' menu option is not functional, but will be soon. An improved 
 
 ctrl+C will exit the program.
 
+##GUI
+The GUI consists of a widget that will eventually allow the user to more easily define shapes using Geometry.py. at this moment in time, the widget does not like to contain more than one action (a button or text box) at a time, this will be corrected in the next version
+
+Use the entry widget to define Length, Center, and Angle of square.
+Click the render button to animate your geometry and export its volume data as a printable STL file
+
 #License
 MIT License
 
