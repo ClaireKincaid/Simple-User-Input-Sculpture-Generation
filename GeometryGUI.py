@@ -285,14 +285,47 @@ anim.add_shape(square8,[rot,rot2])
 #main window
 class MyWindow(Gtk.Window):  #sub class Gtk window to define my window
     def __init__(self):
-        Gtk.Window.__init__(self, title = "Render") #set value of init to hello world
-        self.button = Gtk.Button(label = "Render")
-        self.button.connect("clicked", self.on_button_clicked) #connecked to clicked signal
-        self.add(self.button) #add as child to top level window
-    def on_button_clicked(self, widget):  #method on-buttn-clicked, called if you click on the button
+        Gtk.Window.__init__(self, title = "Geometry") 
+        # self.set_size_request(200,100)
+
+        # self.timeout_id = None
+
+        # vbox = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
+        # self.add(vbox)
+
+        # self.entry = Gtk.Entry()
+        # self.entry.set_text("Values")
+        # vbox.pack_start(self.entry, True, True, 0)
+
+        # hbox = Gtk.Box(spacing = 6)
+        # vbox.pack_start(hbox, True, True, 0)
+
+        # self.check_length = Gtk.CheckButton("Length")
+        # self.check_length.connect("toggled", self.on_length_toggled)
+        # self.check_length.set_active(True)
+        # hbox.pack_start(self.check_length, True, True, 0)
+
+        # self.check_center = Gtk.CheckButton("Center")
+        # self.check_center.connect("toggled", self.on_center_toggled)
+        # self.check_center.set_active(False)
+        # hbox.pack_start(self.check_center, True, True, 0)
+
+        # self.button = Gtk.Button(label = "Render")
+        # self.button.connect("clicked", self.on_button_clicked) 
+        # self.add(self.button)
+
+    def on_button_clicked(self, widget):  
         anim.render_shapes()
         anim.render_volume_data((15,15),240)
         print "Done Rendering"
+
+    # def on_length_toggled(self, button):
+    #     value = button.get_active()
+    #     self.entry.set_visibility(value)
+
+    # def on_center_toggled(self, button):
+    #     value = button.get_active()
+    #     self.entry.set_visibility(value)
 
 win = MyWindow() #create instance of mywindow instead of Gtk.Window
 win.connect("delete-event", Gtk.main_quit)
