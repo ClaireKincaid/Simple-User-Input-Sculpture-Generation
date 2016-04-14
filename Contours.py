@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
 	win = pyglet.window.Window(width=720, height=720, resizable=True, visible=False,
 		config=pyglet.gl.Config(sample_buffers=1, samples=4, double_buffer=True, depth_size=24))
-	create_sculpture('MX.png', 0, 'loaded_noise.p', 240)
+	create_sculpture('MX.png', 1, 'loaded_noise.p', 240)
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT)
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
