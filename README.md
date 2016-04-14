@@ -8,6 +8,12 @@ As of yet, our program requires the following packages to run correctly:
  - SolidPython
  - OpenCV
  - Numpy
+ - Pickle
+ - Scikit Image
+ - Mayavi
+ - numpy-stl
+ - noise
+ - pyglet
 
 We also recommend downloading and installing OpenSCAD, so you can easily compile an STL using the code we currently have in place.
 
