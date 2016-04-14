@@ -39,7 +39,43 @@ Just a warning though, OpenSCAD takes about 1~2 minutes per shape to render as a
 
 ##Schommer's Stuff
 
-##The GUI
+sculpture_gen.py
+
+Using the sculpture_gen program, you can create solids by mathmatically defining them. Begin the progam by running it in the terminal. Answer y/n to the prompts if not otherwise specified. If you choose to mathmatically define objects, then choose the menu item and enter functions and then boolean operations to perform on the functions. A rendering will appear after a boolean operation is completed.
+
+`x2+y2+z**2` < 1 will result in a sphere of radius 1.
+
+`x+y+z` < .5 will result in a planear section which is solid, and the other section is empty.
+
+You can experiment with other defining equations. I do not have an interpreter built into my code. I am using an eval statement. Please don't use this on anything public, because it is very vulnerable to attack.
+
+Right now, there is no way to view the items you are combining, which will be fixed in the next version.
+
+For the function blobby extrude, you choose an image to inspire the program. The image will then be processed to grayscale and a random sculpture will be created from that image.
+
+Currently, the 'i' menu option is not functional, but will be soon. An improved user interface will also be availible in the next update.
+
+ctrl+C will exit the program.
 
 #License
-How do we want to do this?
+MIT License
+
+Copyright (c) 2016 Coleman Ellis, Claire Kincaid, Maximillian Schommer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
