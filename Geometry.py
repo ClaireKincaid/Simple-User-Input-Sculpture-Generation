@@ -13,7 +13,6 @@ from math import sqrt
 import solid as sp
 from solid.utils import *
 from types import NoneType
-from matplotlib import pylab
 import cv2
 
 class Polygon(object):
@@ -111,6 +110,7 @@ class Animation(object):
     def __init__(self, polygon = Square(), transformations = [Rotation()]):
         self.shapes = {}
         self.shapes[polygon] = transformations
+        self.final_shapes = None
 
     def add_shape(self, polygon = Square(), transformations = [Rotation()]):
         self.shapes[polygon] = transformations
@@ -213,8 +213,7 @@ class Animation(object):
                         new_y = round(p1[1] - y_step)
                         new_x = round(p1[0] - y_step/slope)
 
-                    output_image[-new_y][0:new_x] = np.logical_xor(True,output_image[-new_y][0:new_x])
-
+                    output_image[-new_y][0:new_x] = np.logical_xor(True,output_image[-new_y][0:new_x]
         for point in points[:-1]:
             if output_image[-point[1]][0]:
                 output_image[-point[1]][0:point[0]] = np.logical_xor(True,output_image[-point[1]][0:point[0]])
@@ -226,6 +225,10 @@ class Animation(object):
         return output_image
 
     def render_volume_data(self,bounds,resolution):
+
+        if type(self.final_shapes) == NoneType:
+            self.render_shapes()
+
         final_volume = np.zeros((len(self.final_shapes[0]),resolution,resolution), dtype=bool)
         print "Rendering Volume Data"
         for shape in self.final_shapes:
@@ -245,11 +248,6 @@ class Animation(object):
 
         return final_volume
 
-
-
-
-
-
 if __name__ == '__main__':
     square1 = Square(7.5, (5,5))
     square2 = Square(7.5, (-5,-5))
@@ -261,16 +259,17 @@ if __name__ == '__main__':
     square8 = Square(7.5, (-sqrt(50),0))
 
     rot = Rotation(360)
-    rot2 = Rotation(270,(0,0))
+    rot2 = Rotation(270,(5,0))
+    rot3 = Rotation(150,(0,-5))
+    di = Dilation(0.1)
 
-    anim = Animation(square1,[rot2,rot])
-    anim.add_shape(square2,[rot2,rot])
-    anim.add_shape(square3,[rot2,rot])
-    anim.add_shape(square4,[rot,rot2])
-    anim.add_shape(square5,[rot2,rot])
-    anim.add_shape(square6,[rot2,rot])
-    anim.add_shape(square7,[rot,rot2])
-    anim.add_shape(square8,[rot,rot2])
-    anim.render_shapes()
+    anim = Animation(square1,[rot2,rot,di,rot3])
+    anim.add_shape(square2,[rot2,rot,di,rot3])
+    anim.add_shape(square3,[rot2,rot,di,rot3])
+    anim.add_shape(square4,[rot,rot2,di,rot3])
+    anim.add_shape(square5,[rot2,rot,di,rot3])
+    anim.add_shape(square6,[rot2,rot,di,rot3])
+    anim.add_shape(square7,[rot,rot2,di,rot3])
+    anim.add_shape(square8,[rot,rot2,di,rot3])
 
-    anim.render_volume_data((15,15),240)
+    anim.render_volume_data((25,25),240)
