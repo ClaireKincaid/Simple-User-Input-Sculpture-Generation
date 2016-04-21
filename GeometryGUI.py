@@ -310,9 +310,23 @@ class MyWindow(Gtk.Window):  #sub class Gtk window to define my window
         # self.check_center.set_active(False)
         # hbox.pack_start(self.check_center, True, True, 0)
 
-        # self.button = Gtk.Button(label = "Render")
-        # self.button.connect("clicked", self.on_button_clicked) 
-        # self.add(self.button)
+        grid = Gtk.Grid()
+        self.add(grid)
+
+        button1 = Gtk.Button(label="Render")
+        button1.connect("clicked", self.on_button_clicked)
+        button2 = Gtk.Button(label="Button 2")
+        button3 = Gtk.Button(label="Button 3")
+        button4 = Gtk.Button(label="Button 4")
+        button5 = Gtk.Button(label="Button 5")
+        button6 = Gtk.Button(label="Button 6")
+
+        grid.add(button1)
+        grid.attach(button2, 1, 0, 2, 1)
+        grid.attach_next_to(button3, button1, Gtk.PositionType.BOTTOM, 1, 2)
+        grid.attach_next_to(button4, button3, Gtk.PositionType.RIGHT, 2, 1)
+        grid.attach(button5, 1, 2, 1, 1)
+        grid.attach_next_to(button6, button5, Gtk.PositionType.RIGHT, 1, 1)
 
     def on_button_clicked(self, widget):  
         anim.render_shapes()
