@@ -13,8 +13,8 @@ from math import sqrt
 import solid as sp
 from solid.utils import *
 from types import NoneType
-from matplotlib import pylab
 import cv2
+import time
 
 class Polygon(object):
     """Represents a polygon on a plane.
@@ -117,6 +117,7 @@ class Animation(object):
     def __init__(self, polygon = Square(), transformations = [Rotation()]):
         self.shapes = {}
         self.shapes[polygon] = transformations
+        self.final_shapes = None
 
     def add_shape(self, polygon = Square(), transformations = [Rotation()]):
         self.shapes[polygon] = transformations
@@ -168,36 +169,33 @@ class Animation(object):
 
         shapes_to_export = []
 
-        for shape in final_shapes:
-            solid_shapes = []
-            #This shouldn't be hardcoded to 501...
-            for i in range(501):
-                #For each shape (which is stored as a list of points)...
-                solid_shape = shape[i].T.tolist()
-                #Represent it as a polygon...
-                solid_shapes.append(sp.polygon(solid_shape))
-                #Extrude that polygon up .21mm...
-                solid_shapes[i] = sp.linear_extrude(.21)(solid_shapes[i])
-                #Then translate that extrusion up .2mm...
-                solid_shapes[i] = up(i/5.0)(solid_shapes[i])
-            shapes_to_export.append(solid_shapes)
+        # for shape in final_shapes:
+        #     solid_shapes = []
+        #     #This shouldn't be hardcoded to 501...
+        #     for i in range(501):
+        #         #For each shape (which is stored as a list of points)...
+        #         solid_shape = shape[i].T.tolist()
+        #         #Represent it as a polygon...
+        #         solid_shapes.append(sp.polygon(solid_shape))
+        #         #Extrude that polygon up .21mm...
+        #         solid_shapes[i] = sp.linear_extrude(.21)(solid_shapes[i])
+        #         #Then translate that extrusion up .2mm...
+        #         solid_shapes[i] = up(i/5.0)(solid_shapes[i])
+        #     shapes_to_export.append(solid_shapes)
 
-        #Then union ALL of the extrudes of EVERY shape
-        final_export = union()(shapes_to_export)
-        scad_render_to_file(final_export,filename)
+        # #Then union ALL of the extrudes of EVERY shape
+        # final_export = union()(shapes_to_export)
+        # scad_render_to_file(final_export,filename)
 
     def render_points_as_image(self,points,bounds,resolution):
         """Inputs:
         Polygon data: a list of coordinates of points that
         define the corners of a polygon
-
         Bounds: The top right hand corner of the square inside which all
         of the points in the polygon data will fit (x,x) (these are technically
         coordinates, but they should be the same for the sake of squares)
-
         Resolution: The resolution of the output image; a single number,
         all output images are square
-
         Output: a black and white image (stored as a matrix of Booleans)."""
 
         output_image = np.zeros((resolution,resolution), dtype=bool)
@@ -216,7 +214,7 @@ class Animation(object):
         points = points / step_size
 
         #Round the points to prevent future rounding errors
-        points = np.round(points)
+        points = np.floor(points)
 
         for i in range(len(points)-1):
             #For each pair of points
@@ -231,12 +229,11 @@ class Animation(object):
                 if slope:
                     if p2[1] > p1[1]:
                         #Find which x value corresponds to the new y value (using the slope)
-                        new_y = round(p1[1] + y_step)
-                        new_x = round(p1[0] + y_step/slope)
+                        new_y = int(p1[1] + y_step)
+                        new_x = int(p1[0] + y_step/slope)
                     else:
-                        new_y = round(p1[1] - y_step)
-                        new_x = round(p1[0] - y_step/slope)
-
+                        new_y = int(p1[1] - y_step)
+                        new_x = int(p1[0] - y_step/slope)
                     #Then invert every pixel to the left of the new point.
                     #This very nicely fills in the shape, regardless of concavity/convexity.
                     output_image[-new_y][0:new_x] = np.logical_xor(True,output_image[-new_y][0:new_x])
@@ -247,13 +244,87 @@ class Animation(object):
             if output_image[-point[1]][0]:
                 output_image[-point[1]][0:point[0]] = np.logical_xor(True,output_image[-point[1]][0:point[0]])
 
-        # im = output_image.astype(int)*255
-        # cv2.imshow('image',im.astype('uint8'))
-        # cv2.waitKey(0)
+        return output_image
+
+    def render_points_as_wires(self,points,bounds,resolution,output_image = None):
+        """Inputs:
+        Polygon data: a list of coordinates of points that
+        define the corners of a polygon
+
+        Bounds: The top right hand corner of the square inside which all
+        of the points in the polygon data will fit (x,x) (these are technically
+        coordinates, but they should be the same for the sake of squares)
+
+        Resolution: The resolution of the output image; a single number,
+        all output images are square
+
+        Output: a black and white image (stored as a matrix of Booleans).
+        Stores shapes as wireframes, not filled in."""
+
+        if type(output_image) == NoneType:
+            output_image = np.zeros((resolution,resolution), dtype=bool)
+
+        step_size = bounds[1] * 2.0 / resolution
+
+        #Tack the first point onto the end, to make looping through
+        #adjacent pairs of points easier
+        points = np.append(points,[points[0]],axis = 0)
+
+        #Make sure all points are positive
+        points = points + bounds[1]
+
+        #Scale the points so rounding them to whole numbers will place
+        #them within the output resolution
+        points = points / step_size
+
+        #Round the points to prevent future rounding errors
+        points = np.floor(points)
+
+        for i in range(len(points)-1):
+            #For each pair of points
+            p1 = points[i]
+            p2 = points[i+1]
+    
+            #Calculate the slope
+            slope = (p2[1]-p1[1])/(p2[0]-p1[0])
+
+            #If the slope is closer to vertical, step in the y-directions
+            if np.abs(slope) > 1:
+                #Then for each step (of 1) in the y-direction from p1 to p2
+                for y_step in range(int(np.abs(p2[1]-p1[1]))):
+                    if slope:
+                        if p2[1] > p1[1]:
+                            #Find which x value corresponds to the new y value (using the slope)
+                            new_y = int(p1[1] + y_step)
+                            new_x = int(p1[0] + y_step/slope)
+                        else:
+                            new_y = int(p1[1] - y_step)
+                            new_x = int(p1[0] - y_step/slope)
+                        #Make only one pixel true, results in a wireframe
+                        output_image[-new_y][new_x] = True
+            else:
+                #If the slope is more horizontal, do x-steps instead
+                for x_step in range(int(np.abs(p2[0]-p1[0]))):
+                    if slope:
+                        if p2[0] > p1[0]:
+                            #Find which x value corresponds to the new y value (using the slope)
+                            new_y = int(p1[1] + x_step*slope)
+                            new_x = int(p1[0] + x_step)
+                        else:
+                            new_y = int(p1[1] - x_step*slope)
+                            new_x = int(p1[0] - x_step)
+                    else:
+                        if p1[0] > p2[0]:
+                            new_y = p1[1]
+                            new_x = p1[0] - x_step
+                        else:
+                            new_y = p1[1]
+                            new_x = p1[0] + x_step
+                    output_image[-new_y][new_x-1:new_x+1] = True
 
         return output_image
 
-    def render_volume_data(self,bounds,resolution):
+    def render_volume_data(self,bounds,resolution,fast = True):
         """Renders the entire animation as volume data using 
         render_points_as_image()
         
@@ -266,53 +337,65 @@ class Animation(object):
         Resolution: The resolution of each output image; a single number,
         all output images are square
 
+        Fast: Decides whether to render wireframes or filled in shapes (the former for
+        previews, because it's fast, and the latter for exports)
+
         Output: a list of black and white images (stored as a 3D matrix of Booleans)
         """
+        if type(self.final_shapes) == NoneType:
+            self.render_shapes()
+
         final_volume = np.zeros((len(self.final_shapes[0]),resolution,resolution), dtype=bool)
         print "Rendering Volume Data"
-        for shape in self.final_shapes:
+        if fast:
+            for shape in self.final_shapes:
 
-            volume_data = []
+                volume_data = []
 
-            for points in shape:
-                image = self.render_points_as_image(points.T,bounds,resolution)
-                volume_data.append(image)
+                for i in range(len(shape)):
+                    image = self.render_points_as_wires(shape[i].T,bounds,resolution,final_volume[i])
+                    final_volume[i] = image
 
-            final_volume = np.logical_or(final_volume,volume_data)
+        else:
+            for shape in self.final_shapes:
+
+                volume_data = []
+
+                for points in shape:
+                    image = self.render_points_as_image(points.T,bounds,resolution)
+                    volume_data.append(image)
+
+                final_volume = np.logical_or(final_volume,volume_data)
 
         for layer in final_volume:
             im = layer.astype(int)*255
             cv2.imshow('image',im.astype('uint8'))
             cv2.waitKey(0)
-
+        
         return final_volume
 
-
-
-
-
-
 if __name__ == '__main__':
-    square1 = Square(7.5, (5,5))
-    square2 = Square(7.5, (-5,-5))
-    square3 = Square(7.5, (-5,5))
-    square4 = Square(7.5, (5,-5))
-    square5 = Square(7.5, (0,sqrt(50)))
-    square6 = Square(7.5, (0,-sqrt(50)))
-    square7 = Square(7.5, (sqrt(50),0))
-    square8 = Square(7.5, (-sqrt(50),0))
+    square1 = Square(7.5, (6,6))
+    square2 = Square(7.5, (-4,-4))
+    square3 = Square(7.5, (-4,6))
+    square4 = Square(7.5, (6,-4))
+    square5 = Square(7.5, (1,sqrt(50)+1))
+    square6 = Square(7.5, (1,-sqrt(50)+1))
+    square7 = Square(7.5, (1+sqrt(50),1))
+    square8 = Square(7.5, (1-sqrt(50),1))
 
     rot = Rotation(360)
-    rot2 = Rotation(270,(0,0))
+    rot3 = Rotation(360,(0,-5))
+    di = Dilation(0.25)
 
-    anim = Animation(square1,[rot2,rot])
-    anim.add_shape(square2,[rot2,rot])
-    anim.add_shape(square3,[rot2,rot])
-    anim.add_shape(square4,[rot,rot2])
-    anim.add_shape(square5,[rot2,rot])
-    anim.add_shape(square6,[rot2,rot])
-    anim.add_shape(square7,[rot,rot2])
-    anim.add_shape(square8,[rot,rot2])
+    anim = Animation(square1,[rot,di,rot3])
+    anim.add_shape(square2,[rot,di,rot3])
+    anim.add_shape(square3,[rot,di,rot3])
+    anim.add_shape(square4,[rot,di,rot3])
+    anim.add_shape(square5,[rot,di,rot3])
+    anim.add_shape(square6,[rot,di,rot3])
+    anim.add_shape(square7,[rot,di,rot3])
+    anim.add_shape(square8,[rot,di,rot3])
+
     anim.render_shapes()
-
-    anim.render_volume_data((15,15),240)
+    anim.render_volume_data((25,25),240,True)
