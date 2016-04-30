@@ -1,6 +1,6 @@
-First install 
+First install noise:
 
-install noise 1.2.2 by following this link https://pypi.python.org/pypi/noise/ and downloading noise-1.2.2.zip(md5) and then running setup.py in the file.
+	install noise 1.2.2 by following this link https://pypi.python.org/pypi/noise/ and downloading noise-1.2.2.zip(md5) and then running setup.py in the file.
 
 To install all of the dependencies for my code, run each of these lines of code in your command line.
 
