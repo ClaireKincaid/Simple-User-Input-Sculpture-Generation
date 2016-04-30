@@ -1,12 +1,11 @@
 print "Loading libraries..."
-from stl import mesh
 import threading
 import time
 import pickle
 import os
 from skimage import measure
-from noise import pnoise3, snoise3
 import numpy as np
+from stl import mesh
 import cv2
 import pyglet
 from mayavi import mlab
@@ -14,6 +13,7 @@ from traits.api import HasTraits, Instance,  Range, on_trait_change
 from traitsui.api import View, Item, HGroup
 from mayavi.core.ui.api import SceneEditor, MlabSceneModel
 from textblob import TextBlob
+from noise import pnoise3, snoise3
 import random
 print "Done"
 
@@ -110,11 +110,7 @@ class Sculpture(HasTraits):
         input_with_noise = np.lib.pad(input_with_noise, ((1,1),(1,1),(1,1)), 'constant') #This padds the z axis with zero's arrays so that a closed shape is produced by create_iso_surface.
         input_with_noise[input_with_noise>threshold] = 1
         return input_with_noise
-
-    def interpret_input(self):
-        """Intreprets the user input and returns a lambda function that will generate a transformation matrix \
-        based on the input"""
-        pass
+        
 
     def create_iso_surface(self, threshold, second=False):
         volume_data=self.volume_data  #Sets the volume data as that of the sculpture
@@ -202,43 +198,43 @@ class Sculpture(HasTraits):
 
 
     def create_image_matrix(self, degrees=180):
-    """This creates a 3d matrix of an image with rotations acting in the xy plane"""
-    #This code is not yet integrated into the menu, but it works. It needs
-    #to be able to take user text input to create transformation matrices that 
-    #can act on any volume data.
+        """This creates a 3d matrix of an image with rotations acting in the xy plane"""
+        #This code is not yet integrated into the menu, but it works. It needs
+        #to be able to take user text input to create transformation matrices that 
+        #can act on any volume data.
 
-    width = self.matrix_size
-    rows,cols = self.img_cp.shape   #Image cp is the compressed image. 
-    v = np.zeros((width, width, width))
+        width = self.matrix_size
+        rows,cols = self.img_cp.shape   #Image cp is the compressed image. 
+        v = np.zeros((width, width, width))
 
-    
-    for z in range(width):
-        M = cv2.getRotationMatrix2D((cols/2,rows/2),z*degrees/width,1)      #This finds the rotation matirx
-        dyn_img = cv2.resize(image, (int(np.cos(z/width)*width+10), width-z+10))        #Resizes the image throughout the z axis based on a mathematical function.
-        dst = cv2.warpAffine(dyn_img, M,(cols/2,rows/2))                    #This applies the rotation matrix to the image.
+        
+        for z in range(width):
+            M = cv2.getRotationMatrix2D((cols/2,rows/2),z*degrees/width,1)      #This finds the rotation matirx
+            dyn_img = cv2.resize(image, (int(np.cos(z/width)*width+10), width-z+10))        #Resizes the image throughout the z axis based on a mathematical function.
+            dst = cv2.warpAffine(dyn_img, M,(cols/2,rows/2))                    #This applies the rotation matrix to the image.
 
-        v[:][z][:] += cv2.warpAffine(dyn_img,M,(cols,rows)) 
+            v[:][z][:] += cv2.warpAffine(dyn_img,M,(cols,rows)) 
 
-    v = np.lib.pad(v, ((1,1),(1,1),(1,1)), 'constant') #This padds the z axis with zero's arrays so that a closed shape is produced by create_iso_surface.
-    return v
+        v = np.lib.pad(v, ((1,1),(1,1),(1,1)), 'constant') #This padds the z axis with zero's arrays so that a closed shape is produced by create_iso_surface.
+        return v
 
 
 
     def three_d_print(self):
-    """This will produce a 3d printable stl based on self.volume_data. It is to be used for the final "print" button, and needs to be fed high quality data."""
+        """This will produce a 3d printable stl based on self.volume_data. It is to be used for the final "print" button, and needs to be fed high quality data."""
 
-    name = raw_input('What should the filename be?') + '.stl'
-    
+        name = raw_input('What should the filename be?') + '.stl'
+        
 
-    verts, faces = measure.marching_cubes(self.volume_data, 0)   #Marching Cubes algorithm
+        verts, faces = measure.marching_cubes(self.volume_data, 0)   #Marching Cubes algorithm
 
-    solid = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
-    for i, f in enumerate(faces):
-        for j in range(3):
-            solid.vectors[i][j] = verts[f[j],:]
+        solid = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+        for i, f in enumerate(faces):
+            for j in range(3):
+                solid.vectors[i][j] = verts[f[j],:]
 
-    
-    solid.save(name)
+        
+        solid.save(name)
 
 
 #Here be UI    
