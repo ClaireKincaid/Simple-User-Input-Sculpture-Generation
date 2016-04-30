@@ -13,8 +13,9 @@ from math import sqrt
 import solid as sp
 from solid.utils import *
 from types import NoneType
-import cv2
+# import cv2
 import time
+import subprocess32 as subprocess32
 
 class Polygon(object):
     """Represents a polygon on a plane.
@@ -436,14 +437,31 @@ class Animation(object):
                 #Represent it as a polygon...
                 solid_shapes.append(sp.polygon(solid_shape))
                 #Extrude that polygon up .21mm...
-                solid_shapes[i] = sp.linear_extrude(.05025)(solid_shapes[i])
+                solid_shapes[i] = sp.linear_extrude(.2)(solid_shapes[i])
                 #Then translate that extrusion up .2mm...
-                solid_shapes[i] = up(i*.05)(solid_shapes[i])
+                solid_shapes[i] = up(i*.21)(solid_shapes[i])
             shapes_to_export.append(solid_shapes)
 
         #Then union ALL of the extrudes of EVERY shape
         final_export = union()(shapes_to_export)
         scad_render_to_file(final_export,filename)
+
+    def preview_scad(self, filename = 'test.scad', proc = None):
+
+        if proc:
+            proc.terminate()
+        proc = subprocess32.Popen(["openscad", filename])
+        return proc
+
+    def render_scad(self, filename = 'test.scad'):
+        output_name = filename.split('.')[0] + '.stl'
+
+        proc = subprocess32.Popen(['openscad','-o',output_name,filename])
+        print "Rendering..."
+        proc.wait()
+        proc.terminate()
+
+
 
 if __name__ == '__main__':
     # circle = Circle(5)

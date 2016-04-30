@@ -110,7 +110,7 @@ class Sculpture(HasTraits):
         input_with_noise = np.lib.pad(input_with_noise, ((1,1),(1,1),(1,1)), 'constant') #This padds the z axis with zero's arrays so that a closed shape is produced by create_iso_surface.
         input_with_noise[input_with_noise>threshold] = 1
         return input_with_noise
-        
+
 
     def create_iso_surface(self, threshold, second=False):
         volume_data=self.volume_data  #Sets the volume data as that of the sculpture
