@@ -52,7 +52,7 @@ Then just export the animation:
 
 You should now have an OpenSCAD file showing a square rotating 360 degrees as it moves upwards! From here you can play with adding different shapes (either regular polygons using n_Sided_Polygon, or Polygons defined using lists of points), and different transformations (rotations of different degrees or about different points, as well as dilations). You can make some really interesting sculptures with just a few shapes and a few transformations. The following code, for example, generates a cool swirly dome:
 
-`from Geometry import *
+```from Geometry import *
 from math import pi
 hex1 = n_Sided_Polygon(6,12) #A hexagon, centered on the origin, with radius 12
 hex2 = n_Sided_Polygon(6,12)
@@ -62,7 +62,7 @@ di   = Cosine_Harmonic_Dilation(pi/2,None,128) #Cosine_Harmonic_Dilation scales 
 di2  = Dilation(1.2,None,128)
 anim = Animation(hex1,[rot1,di,di2])
 anim.add_shape(hex2,[rot2,di,di2]) #This is how you add a second shape
-anim.write_to_scad('capstone.scad')`
+anim.write_to_scad('capstone.scad')```
 
 Just a warning though, OpenSCAD takes about 1~2 minutes per shape to render as an STL.
 
