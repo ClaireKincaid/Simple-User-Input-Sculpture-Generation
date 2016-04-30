@@ -1,26 +1,22 @@
-First do this:
+First install 
 
 install noise 1.2.2 by following this link https://pypi.python.org/pypi/noise/ and downloading noise-1.2.2.zip(md5) and then running setup.py in the file.
 
-
 To install all of the dependencies for my code, run each of these lines of code in your command line.
 
+	$sudo pip install numpy-stl
 
-sudo pip install numpy-stl
+	$sudo apt-get install python-skimage
 
-sudo apt-get install python-skimage
+	$sudo apt-get install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
 
+	$sudo apt-get install libvtk5-dev python-vtk
 
+	$sudo apt-get install python-pyglet
 
-sudo apt-get install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
+	$sudo pip install mayavi
 
-sudo apt-get install libvtk5-dev python-vtk
+	$sudo pip install -U textblob
 
-sudo apt-get install python-pyglet
-
-sudo pip install mayavi
-
-sudo pip install -U textblob
-
-python -m textblob.download_corpora
+	$python -m textblob.download_corpora
 
