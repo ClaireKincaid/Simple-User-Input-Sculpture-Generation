@@ -19,12 +19,17 @@ import time
 class Polygon(object):
     """Represents a polygon on a plane.
 
-    Attributes: points (a list of Point objects)
+    Attributes: points (a list of tuples that represent coordinates)
     """
 
     def __init__(self, points=[(0,0)]):
         self.points = np.array(points)
         self.find_center()
+
+    def find_center(self):
+        sum_point = sum(self.points)
+        centroid = sum_point/len(self.points)
+        self.center = centroid
 
     def __str__(self):
         return str(self.points)
@@ -33,20 +38,16 @@ class Polygon(object):
         return self.__str__()
 
     def __add__(self,other):
+        #Add a 2D vector to translate the entire polygon
         return Polygon(self.points + other)
 
     def __mul__(self,other):
+        #Multiply every point by a scalar
         return Polygon(self.points * other)
 
-    def find_center(self):
-        sum_point = sum(self.points)
-        centroid = sum_point/len(self.points)
-        self.center = centroid
-
 class n_Sided_Polygon(Polygon):
-    """Generates a regular n sided polygon
-
-    Attributes: points (a list of Point objects)
+    """Generates a regular N sided polygon with a defined radius,
+    centered at center.
     """
 
     def __init__(self, N = 3, radius = 1, center = (0,0), angle = 0):
@@ -59,23 +60,39 @@ class n_Sided_Polygon(Polygon):
         super(n_Sided_Polygon,self).__init__(points)
 
 class Square(n_Sided_Polygon):
-    """Generates a square of side length l.
-
-    Attributes: points (a list of Point objects)
+    """Generates a square of side length l, centered at center.
     """
 
     def __init__(self, l = 2, center = (0,0), angle = pi/4):
         super(Square,self).__init__(4,sqrt(2)*l/2.0,center,angle)
 
+class Circle(n_Sided_Polygon):
+    """Generates a circle of radius r, centered on center
+    """
+
+    def __init__(self, r = 2, center = (0,0)):
+        super(Circle,self).__init__(25,r,center,0)
 
 """Transformations"""
+class Transformation(object):
+    """As of yet, this just provides the __cmp__ function, which allows
+    for sorting transformations.
 
-class Rotation(object):
-    """A transformation that rotates a shape theta degrees about a given point
-    The rotation scales linearly with respect to z position
-    Stored as a 3D matrix, where each entry in the topmost list is a 2x2 rotation matrix
+    """
+    def __init__(self):
+        self.rank = 0
 
-    Attributes: theta, center, depth
+    def __cmp__(self, other):
+        return self.rank-other.rank
+
+
+class Rotation(Transformation):
+    """A transformation that rotates a shape theta degrees about a given point.
+    The rotation scales linearly with respect to z position.
+    Stored as a 3D matrix, where each entry in the topmost list is a 2x2 rotation matrix.
+
+    Attributes: theta (final angle rotated), center (point to rotate about), depth (number of layers)
+    If center is None, rotates about the shape's center
     """
 
     def __init__(self,theta = 0, center = None, depth = 500):
@@ -85,19 +102,24 @@ class Rotation(object):
 
         if center:
             self.center = np.array(center)
+            self.rank = 5
         else:
             self.center = None
+            self.rank = 1
 
-class Dilation(object):
+class Dilation(Transformation):
     """A transformation that scales a shape by a given factor.
     The dilation scales linearly with respect to z position
     Stored as 3D matrix, where each entry in the topmost list is a 2x2 scaling matrix
 
-    Attributes: scale_factor, depth
+    Attributes: scale_factor (the factor to scale to), depth
     """
 
-    def __init__(self, scale_factor = 1, depth = 500):
-        self.center = None
+    def __init__(self, scale_factor = 1, center = None, depth = 500):
+        if center:
+            self.center = np.array(center)
+        else:
+            self.center = None
 
         scale_factor = float(scale_factor)
         if scale_factor > 1:
@@ -106,6 +128,47 @@ class Dilation(object):
             scale_factor = 1-scale_factor
             self.trans_mat = [[[1 - i*scale_factor/depth,0],[0,1 - i*scale_factor/depth]] for i in range(depth+1)]
 
+        self.rank = 3
+
+class Cosine_Harmonic_Dilation(Transformation):
+    """A transformation that scales a shape by a given factor.
+    The dilation scales based on a cosine with respect to z position
+    Stored as 3D matrix, where each entry in the topmost list is a 2x2 scaling matrix
+
+    Attributes: angle (cosine function runs from 0 to angle), center, depth
+    """
+    def __init__(self, angle = pi/2, center = None, depth = 500):
+        if center:
+            self.center = np.array(center)
+        else:
+            self.center = None
+
+        self.trans_mat = [[[cos(float(i)/depth*angle),0],[0,cos(float(i)/depth*angle)]] for i in range(depth+1)]
+
+        self.rank = 3
+
+class Inward_Harmonic_Dilation(Transformation):
+    """A transformation that scales a shape by a given factor.
+    The dilation scales inward based on a sine with respect to z position.
+    Results in a a shape that bows inward.
+    Stored as 3D matrix, where each entry in the topmost list is a 2x2 scaling matrix
+
+    Attributes: scale factor (smallest diameter/largest diameter), center, depth
+    """
+
+
+    def __init__(self, scale_factor = 1, center = None, depth = 500):
+        if center:
+            self.center = np.array(center)
+        else:
+            self.center = None
+
+        scale_factor = float(1 - scale_factor)
+        self.trans_mat = [[[1 - sin(float(i)/depth*pi)*scale_factor,0],[0,1 - sin(float(i)/depth*pi)*scale_factor]] for i in range(depth+1)]
+
+        self.rank = 3
+
+"""Animations"""
 class Animation(object):
     """A collection of polygons and transformations, that can be exported
     to an openscad file or as a series of black and white images (volume data)
@@ -122,9 +185,14 @@ class Animation(object):
     def add_shape(self, polygon = Square(), transformations = [Rotation()]):
         self.shapes[polygon] = transformations
 
-    def render_shapes(self, filename = 'test.scad'):
-        """Uses self.shapes to render a single OpenSCAD file that contains all of the
-        shapes and their applied transformations."""
+    def render_shapes(self):
+        """Inputs: none
+
+        Output: Sets self.final_shapes to a 3D matrix. Each entry in the matrix
+        is a matrix of two lists: a list of x coordinates and a list of corresponding
+        y-coordinates. These represent all of the points along the edges of all defined
+        shapes and their transformations as tored in self.shapes
+        """
         
         final_shapes = []
 
@@ -134,10 +202,7 @@ class Animation(object):
 
             #Transformations that affect Polygons about their center need to be applied before those that rotate about specific points
             #This is to avoid having to recalculate the centers of shapes
-            center_transformations = [transformation for transformation in transformations if type(transformation.center) is NoneType]
-            other_transformations  = [transformation for transformation in transformations if transformation not in center_transformations]
-
-            transformations = center_transformations + other_transformations
+            transformations.sort()
             
             #These matrix multiplications use the power of numpy matrix multiplication to very quickly apply transformations
             #to hundreds of points.
@@ -151,6 +216,7 @@ class Animation(object):
                 new_shape = shape.points - shape.center
                 new_shape = np.dot(transformations[0].trans_mat,new_shape.transpose())
                 new_shape = new_shape + shape.center.reshape(2,1)
+
 
             if len(transformations) > 1:
                 for transformation in transformations[1:]:
@@ -166,26 +232,6 @@ class Animation(object):
             final_shapes.append(new_shape)
         
         self.final_shapes = final_shapes
-
-        shapes_to_export = []
-
-        # for shape in final_shapes:
-        #     solid_shapes = []
-        #     #This shouldn't be hardcoded to 501...
-        #     for i in range(501):
-        #         #For each shape (which is stored as a list of points)...
-        #         solid_shape = shape[i].T.tolist()
-        #         #Represent it as a polygon...
-        #         solid_shapes.append(sp.polygon(solid_shape))
-        #         #Extrude that polygon up .21mm...
-        #         solid_shapes[i] = sp.linear_extrude(.21)(solid_shapes[i])
-        #         #Then translate that extrusion up .2mm...
-        #         solid_shapes[i] = up(i/5.0)(solid_shapes[i])
-        #     shapes_to_export.append(solid_shapes)
-
-        # #Then union ALL of the extrudes of EVERY shape
-        # final_export = union()(shapes_to_export)
-        # scad_render_to_file(final_export,filename)
 
     def render_points_as_image(self,points,bounds,resolution):
         """Inputs:
@@ -367,35 +413,64 @@ class Animation(object):
 
                 final_volume = np.logical_or(final_volume,volume_data)
 
-        for layer in final_volume:
-            im = layer.astype(int)*255
-            cv2.imshow('image',im.astype('uint8'))
-            cv2.waitKey(0)
+        # for layer in final_volume:
+        #     im = layer.astype(int)*255
+        #     cv2.imshow('image',im.astype('uint8'))
+        #     cv2.waitKey(0)
         
         return final_volume
 
+    def write_to_scad(self, filename = 'test.scad'):
+
+        if type(self.final_shapes) == NoneType:
+            self.render_shapes()
+
+        shapes_to_export = []
+
+        for shape in self.final_shapes:
+            solid_shapes = []
+
+            for i in range(len(shape)):
+                #For each shape (which is stored as a list of points)...
+                solid_shape = shape[i].T.tolist()
+                #Represent it as a polygon...
+                solid_shapes.append(sp.polygon(solid_shape))
+                #Extrude that polygon up .21mm...
+                solid_shapes[i] = sp.linear_extrude(.05025)(solid_shapes[i])
+                #Then translate that extrusion up .2mm...
+                solid_shapes[i] = up(i*.05)(solid_shapes[i])
+            shapes_to_export.append(solid_shapes)
+
+        #Then union ALL of the extrudes of EVERY shape
+        final_export = union()(shapes_to_export)
+        scad_render_to_file(final_export,filename)
+
 if __name__ == '__main__':
-    square1 = Square(7.5, (6,6))
-    square2 = Square(7.5, (-4,-4))
-    square3 = Square(7.5, (-4,6))
-    square4 = Square(7.5, (6,-4))
-    square5 = Square(7.5, (1,sqrt(50)+1))
-    square6 = Square(7.5, (1,-sqrt(50)+1))
-    square7 = Square(7.5, (1+sqrt(50),1))
-    square8 = Square(7.5, (1-sqrt(50),1))
+    # circle = Circle(5)
+    # square1 = Circle(7.5, (10,0))
+    # square2 = Circle(7.5, (0,10))
+    # square3 = Circle(7.5, (-10,0))
+    # square4 = Circle(7.5, (0,-10))
 
-    rot = Rotation(360)
-    rot3 = Rotation(360,(0,-5))
-    di = Dilation(0.25)
+    # rot = Rotation(360,(0,0))
+    # rot2 = Rotation(-180,(0,0))
+    # di2 = Inward_Harmonic_Dilation(.6,(0,0))
 
-    anim = Animation(square1,[rot,di,rot3])
-    anim.add_shape(square2,[rot,di,rot3])
-    anim.add_shape(square3,[rot,di,rot3])
-    anim.add_shape(square4,[rot,di,rot3])
-    anim.add_shape(square5,[rot,di,rot3])
-    anim.add_shape(square6,[rot,di,rot3])
-    anim.add_shape(square7,[rot,di,rot3])
-    anim.add_shape(square8,[rot,di,rot3])
+    # anim = Animation(square1,[rot,di2])
+    # anim.add_shape(square2,[rot2,di2])
+    # anim.add_shape(square3,[rot,di2])
+    # anim.add_shape(square4,[rot2,di2])
+    # anim.add_shape(circle)
 
-    anim.render_shapes()
-    anim.render_volume_data((25,25),240,True)
+    hex1 = n_Sided_Polygon(6,12.35*8/sqrt(3))
+    hex2 = n_Sided_Polygon(6,12.35*8/sqrt(3))
+
+    rot1 = Rotation( 120,None,96)
+    rot2 = Rotation(-60,None,96)
+    di   = Inward_Harmonic_Dilation(.3,None,96)
+
+    anim = Animation(hex1,[rot1,di])
+    anim.add_shape(hex2,[rot2,di])
+
+    anim.write_to_scad()
+    # anim.render_volume_data((12,12),240,False)
