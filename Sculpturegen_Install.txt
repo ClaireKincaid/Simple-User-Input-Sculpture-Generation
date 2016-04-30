@@ -4,6 +4,8 @@ install noise 1.2.2 by following this link https://pypi.python.org/pypi/noise/ a
 
 To install all of the dependencies for my code, run each of these lines of code in your command line.
 
+	$sudo pip install enum34
+
 	$sudo pip install numpy-stl
 
 	$sudo apt-get install python-skimage
