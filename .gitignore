@@ -1,2 +1,4 @@
 *.stl
 *.scad
+*.pyc
+Shapes.py
