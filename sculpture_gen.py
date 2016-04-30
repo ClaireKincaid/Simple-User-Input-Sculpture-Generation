@@ -24,7 +24,7 @@ print "Done"
 
 class Sculpture(HasTraits):
 	def __init__(self):
-		self.noise_file = 'loaded_noise4.p'
+		self.noise_file = 'loaded_noise4.p' #Initializes the noise as a pickled file.
 		self.matrix_size = 120  #pixels
 		self.noise_scale = 3/float(240)  #the scale perlin noise is generated at.
 		self.noise = self.load_noise()
@@ -48,6 +48,8 @@ class Sculpture(HasTraits):
 		return loaded_noise
 
 	def create_noise(self):
+		"""If a noise file was not found, this will create a noise file using pnoise3"""
+
 		matrix_size = self.matrix_size
 		scale = self.noise_scale
 		coords = range(matrix_size)
@@ -195,8 +197,50 @@ class Sculpture(HasTraits):
 		Visualization().configure_traits()
 		self.create_iso_surface(.4)
 
-	def update(self):
-		"""Updates the information in the sculpture class"""
+	# def i_menu(self):
+	# 	"""Runs the image transformation menu item."""
+	def transform_matrix(self):
+		"""Creates a transformation matrix to impose on 3d volume data."""
+
+
+	def create_image_matrix(self, degrees=180):
+	"""This creates a 3d matrix of an image with rotations acting in the xy plane"""
+	#This code is not yet integrated into the menu, but it works. It needs
+	#to be able to take user text input to create transformation matrices that 
+	#can act on any volume data.
+
+	width = self.matrix_size
+	rows,cols = self.img_cp.shape   #Image cp is the compressed image. 
+	v = np.zeros((width, width, width))
+
+	
+	for z in range(width):
+		M = cv2.getRotationMatrix2D((cols/2,rows/2),z*degrees/width,1)      #This finds the rotation matirx
+		dyn_img = cv2.resize(image, (int(np.cos(z/width)*width+10), width-z+10))		#Resizes the image throughout the z axis based on a mathematical function.
+		dst = cv2.warpAffine(dyn_img, M,(cols/2,rows/2))    				#This applies the rotation matrix to the image.
+
+		v[:][z][:] += cv2.warpAffine(dyn_img,M,(cols,rows)) 
+
+	v = np.lib.pad(v, ((1,1),(1,1),(1,1)), 'constant') #This padds the z axis with zero's arrays so that a closed shape is produced by create_iso_surface.
+	return v
+
+
+
+	def three_d_print(self):
+	"""This will produce a 3d printable stl based on self.volume_data. It is to be used for the final "print" button, and needs to be fed high quality data."""
+
+	name = raw_input('What should the filename be?') + '.stl'
+	
+
+	verts, faces = measure.marching_cubes(self.volume_data, 0)   #Marching Cubes algorithm
+
+	solid = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+	for i, f in enumerate(faces):
+		for j in range(3):
+			solid.vectors[i][j] = verts[f[j],:]
+
+	
+	solid.save(name)
 
 
 #Here be UI	
@@ -213,21 +257,22 @@ class Visualization(HasTraits):
         volume_data = my_sculpture.bloby_extrude(self.threshold)
         self.plot = self.scene.mlab.contour3d(volume_data)
 
-    @on_trait_change('threshold,compression')
+    @on_trait_change('threshold,compression')#Add variable you want sliders or other buttons to this string
     def update_plot(self):
     	self.scene.mlab.clf()
-    	my_sculpture.matrix_size = 120/(2**self.compression)
-    	my_sculpture.small_noise = my_sculpture.compress_noise(self.compression)
+    	my_sculpture.matrix_size = 120/(2**self.compression)    #Modify the value that you called to update
+    	if len(my_sculpture.small_noise) != my_sculpture.matrix_size:   #Checks if the compression has already been evaluated.
+    		my_sculpture.small_noise = my_sculpture.compress_noise(self.compression)
 
-        volume_data = my_sculpture.bloby_extrude(self.threshold)
+        volume_data = my_sculpture.bloby_extrude(self.threshold)	#Sets the new volume data to be evaluated at the new thresholded value
         src = mlab.pipeline.scalar_field(volume_data)
-        mlab.pipeline.iso_surface(src, contours=[volume_data.min()+self.threshold*volume_data.ptp(), ])
+        mlab.pipeline.iso_surface(src, contours=[volume_data.min()+self.threshold*volume_data.ptp(), ])   #Use pipeline to reevaluate the data and replot it.
         # self.plot.mlab_source.set(volume_data=volume_data)
 
 
     view = View(Item('scene', height=300, show_label=False,
                     editor=SceneEditor()),
-                HGroup('threshold', 'compression'), resizable=True)
+                HGroup('threshold', 'compression'), resizable=True)  #Remember to put in the sliders you want in here.
 
 
 
@@ -238,7 +283,6 @@ if __name__ == '__main__':
 	my_sculpture.noise_file = 'test_noise.p'
 	my_sculpture.noise = my_sculpture.compress_noise(240/my_sculpture.matrix_size - 1)
 	my_sculpture.volume_data = np.lib.pad(my_sculpture.noise, ((1,1),(1,1),(1,1)), 'constant')
-	# Fire up the dialog
 	
 	while True:
 
