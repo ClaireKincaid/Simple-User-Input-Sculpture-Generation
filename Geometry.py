@@ -419,6 +419,7 @@ class Animation(object):
         #     cv2.imshow('image',im.astype('uint8'))
         #     cv2.waitKey(0)
         
+        print "Done"
         return final_volume
 
     def write_to_scad(self, filename = 'test.scad'):
