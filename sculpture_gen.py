@@ -17,9 +17,6 @@ from noise import pnoise3, snoise3
 import random
 print "Done"
 
-
-
-
 class Sculpture(HasTraits):
     def __init__(self):
         self.noise_file = 'loaded_noise4.p' #Initializes the noise as a pickled file.
@@ -232,13 +229,10 @@ class Sculpture(HasTraits):
         for i, f in enumerate(faces):
             for j in range(3):
                 solid.vectors[i][j] = verts[f[j],:]
-
         
         solid.save(name)
 
-
 #Here be UI    
-
 
 class Visualization(HasTraits):
     threshold = Range(0, 1., .5)

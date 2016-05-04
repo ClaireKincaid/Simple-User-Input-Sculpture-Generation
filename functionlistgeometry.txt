@@ -1,0 +1,15 @@
+FunctionListGeometry
+-- add shapes
+	-- add square (length of sides, center of shape, angle(orientation of piece in plane))
+	-- add n sided polygon (number of sides, radius (distance from center to corners), center of shape, angle (orientation of piece in plane))
+	-- add circle (radius, center of shape)
+	-- add polygon (list of points as corners)
+-- add transformation
+	-- add rotation (angle of rotation (d0), center of rotation (default center of shape), number of layers(d500))
+	-- add dilation (scale of dilation (d1), center of dilation (default center of shape), number of layers (d500))
+	-- add cosine harmonic dilation (angle (cos defines scale of dilation, d pi/2, center of dilation (default center of shape), number of layers (d500))
+	-- add inward harmonic dilation (scale factor (smallest diameter/largest diameter, defaults to 1), center (defaults center of shape), number of layers (default 500))
+
+-- preview(opens openscad file)
+
+-- render(renders as an STL from openscad file)
