@@ -19,7 +19,7 @@ print "Done"
 
 class Sculpture(HasTraits):
     def __init__(self):
-        self.noise_file = 'loaded_noise4.p' #Initializes the noise as a pickled file.
+        self.noise_file = 'loaded_noise5.p' #Initializes the noise as a pickled file.
         self.matrix_size = 120  #pixels
         self.noise_scale = 3/float(240)  #the scale perlin noise is generated at.
         self.noise = self.load_noise()
@@ -262,13 +262,9 @@ class Visualization(HasTraits):
                     editor=SceneEditor()),
                 HGroup('threshold', 'compression'), resizable=True)  #Remember to put in the sliders you want in here.
 
-
-
-
 if __name__ == '__main__':
 
     my_sculpture = Sculpture()
-    my_sculpture.noise_file = 'test_noise.p'
     my_sculpture.noise = my_sculpture.compress_noise(120/my_sculpture.matrix_size - 1)
     my_sculpture.volume_data = np.lib.pad(my_sculpture.noise, ((1,1),(1,1),(1,1)), 'constant')
     
