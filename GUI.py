@@ -26,11 +26,13 @@ class FirstWindow(Gtk.Window):  #sub class Gtk window to define my window
         #Initializes Vector Animation Button, places in box
         self.VectorButton = Gtk.Button(label = "Vector Animation")
         self.VectorButton.connect("clicked", self.on_VectorButton_clicked)
+        self.VectorButton.connect("clicked", Gtk.main_quit)
         self.box.pack_start(self.VectorButton, True, True, 0)
 
         #Initializes Perlin Noise Button, places in box
         self.PerlinButton = Gtk.Button(label = "Perlin Noise")
         self.PerlinButton.connect("clicked", self.on_PerlinButton_clicked)
+        self.PerlinButton.connect("clicked", Gtk.main_quit)
         self.box.pack_start(self.PerlinButton, True, True, 0)
 
     #when VectorButton clicked, toggles to new GUI
