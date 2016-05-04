@@ -500,7 +500,7 @@ class Animation(object):
         return proc
 
     def render_scad(self, filename = 'test.scad'):
-         """Automatically renders an openscad file to an STL. 
+        """Automatically renders an openscad file to an STL. 
         Still slightly WIP,
         as we're not completely sure on how to make shell-esque commands
         safe.
