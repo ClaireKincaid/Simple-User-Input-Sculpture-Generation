@@ -18,13 +18,18 @@ class PerlinWindow(Gtk.Window):  #sub class Gtk window to define my window
         self.set_default_size(400, 50)
 
         #initiates Gtk box window
-        self.box = Gtk.Box(spacing = 6)
-        self.add(self.box)
+        self.grid = Gtk.Grid()
+        self.add(self.grid)
 
         #Initializes Add Picture Button, places in box
         self.AddImageButton = Gtk.Button(label = "Add an Image to Be Inspired By")
         self.AddImageButton.connect("clicked", self.on_AddImageButton_clicked)
-        self.box.pack_start(self.AddImageButton, True, True, 0)
+        self.grid.add(self.AddImageButton)
+
+        #initializes add image entry, places in box
+        self.AddImageEntry = Gtk.Entry()
+        self.AddImageEntry.set_text("FileName")
+        self.grid.attach_next_to(self.AddImageEntry, self.AddImageButton, Gtk.PositionType.RIGHT, 2, 1)
 
     #when Add Shape button clicked, adds a new shape
     def on_AddImageButton_clicked(self, widget):

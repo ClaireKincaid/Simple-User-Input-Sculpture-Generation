@@ -269,7 +269,7 @@ if __name__ == '__main__':
 
     my_sculpture = Sculpture()
     my_sculpture.noise_file = 'test_noise.p'
-    my_sculpture.noise = my_sculpture.compress_noise(240/my_sculpture.matrix_size - 1)
+    my_sculpture.noise = my_sculpture.compress_noise(120/my_sculpture.matrix_size - 1)
     my_sculpture.volume_data = np.lib.pad(my_sculpture.noise, ((1,1),(1,1),(1,1)), 'constant')
     
     while True:
