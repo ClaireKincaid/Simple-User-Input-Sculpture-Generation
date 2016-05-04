@@ -15,8 +15,9 @@ from solid.utils import *
 from types import NoneType
 # import cv2
 import time
-import subprocess32 as subprocess32
+import subprocess32
 
+"""Shapes"""
 class Polygon(object):
     """Represents a polygon on a plane.
 
@@ -48,7 +49,8 @@ class Polygon(object):
 
 class n_Sided_Polygon(Polygon):
     """Generates a regular N sided polygon with a defined radius,
-    centered at center.
+    centered at point center. Angle is the angle CCW from the positive x-axis
+    for the first point to lie on.
     """
 
     def __init__(self, N = 3, radius = 1, center = (0,0), angle = 0):
@@ -61,14 +63,14 @@ class n_Sided_Polygon(Polygon):
         super(n_Sided_Polygon,self).__init__(points)
 
 class Square(n_Sided_Polygon):
-    """Generates a square of side length l, centered at center.
+    """Generates a square of side length l, centered at point center.
     """
 
     def __init__(self, l = 2, center = (0,0), angle = pi/4):
         super(Square,self).__init__(4,sqrt(2)*l/2.0,center,angle)
 
 class Circle(n_Sided_Polygon):
-    """Generates a circle of radius r, centered on center
+    """Generates a circle of radius r, centered on point center
     """
 
     def __init__(self, r = 2, center = (0,0)):
@@ -113,7 +115,8 @@ class Dilation(Transformation):
     The dilation scales linearly with respect to z position
     Stored as 3D matrix, where each entry in the topmost list is a 2x2 scaling matrix
 
-    Attributes: scale_factor (the factor to scale to), depth
+    Attributes: scale_factor, depth (number of layers)
+    If center is None, scales about the shape's center
     """
 
     def __init__(self, scale_factor = 1, center = None, depth = 500):
@@ -124,6 +127,7 @@ class Dilation(Transformation):
 
         scale_factor = float(scale_factor)
         if scale_factor > 1:
+            scale_factor -= 1
             self.trans_mat = [[[1 + i*scale_factor/depth,0],[0,1 + i*scale_factor/depth]] for i in range(depth+1)]
         else:
             scale_factor = 1-scale_factor
@@ -136,7 +140,8 @@ class Cosine_Harmonic_Dilation(Transformation):
     The dilation scales based on a cosine with respect to z position
     Stored as 3D matrix, where each entry in the topmost list is a 2x2 scaling matrix
 
-    Attributes: angle (cosine function runs from 0 to angle), center, depth
+    Attributes: angle (cosine function runs from 0 to angle), center, depth (number of layers)
+    If center is none, scales about the shape's center
     """
     def __init__(self, angle = pi/2, center = None, depth = 500):
         if center:
@@ -154,7 +159,8 @@ class Inward_Harmonic_Dilation(Transformation):
     Results in a a shape that bows inward.
     Stored as 3D matrix, where each entry in the topmost list is a 2x2 scaling matrix
 
-    Attributes: scale factor (smallest diameter/largest diameter), center, depth
+    Attributes: scale factor (smallest diameter/largest diameter), center, depth (number of layers)
+    If center is none, scales about the shape's center
     """
 
 
@@ -175,16 +181,37 @@ class Animation(object):
     to an openscad file or as a series of black and white images (volume data)
 
     Attributes: shapes (a dictionary whose keys are Polygons, and whose values are lists
-    of transformations to apply to that polygon).
+    of transformations to apply to that polygon). 
+    Final_shapes, a 4D matrix that stores all of the
+    points of all of the shapes after having been transformed
     """
 
-    def __init__(self, polygon = Square(), transformations = [Rotation()]):
+    def __init__(self, polygons = [Square()], transformations = [Rotation()]):
+        """polygons is either a list of Polygon objects, or a single Polygon object
+        transformations is either a list of Transformation objects, or a single Transformation object
+        When the animation is rendered, all of the shapes in the polygons list will have all of the
+        transformations in the transformations list applied to them.
+        """
+        if type(polygons) is not list:
+            polygons = [polygons]
+        if type(transformations) is not list:
+            transformations = [transformations]
+
         self.shapes = {}
-        self.shapes[polygon] = transformations
+        for polygon in polygons:
+            self.shapes[polygon] = transformations
         self.final_shapes = None
 
-    def add_shape(self, polygon = Square(), transformations = [Rotation()]):
-        self.shapes[polygon] = transformations
+    def add_shape(self, polygons = [Square()], transformations = [Rotation()]):
+        """Adds another list of shapes and transformations to render in the animation,
+        in the same way as instantiating an Animation"""
+        if type(polygons) is not list:
+            polygons = [polygons]
+        if type(transformations) is not list:
+            transformations = [transformations]
+
+        for polygon in polygons:
+            self.shapes[polygon] = transformations
 
     def render_shapes(self):
         """Inputs: none
@@ -305,6 +332,10 @@ class Animation(object):
         Resolution: The resolution of the output image; a single number,
         all output images are square
 
+        output_image: allows for calculating several shapes in-place; the output of
+        one render_points_as_wires can be passed to the next to avoid needing to
+        store the intermediate steps.
+
         Output: a black and white image (stored as a matrix of Booleans).
         Stores shapes as wireframes, not filled in."""
 
@@ -400,6 +431,8 @@ class Animation(object):
                 volume_data = []
 
                 for i in range(len(shape)):
+                    #shape needs to be transposed so we get a list of coordinate pairs
+                    #shape, by default, is a list of x-values and a corresponding list of y-values
                     image = self.render_points_as_wires(shape[i].T,bounds,resolution,final_volume[i])
                     final_volume[i] = image
 
@@ -413,16 +446,18 @@ class Animation(object):
                     volume_data.append(image)
 
                 final_volume = np.logical_or(final_volume,volume_data)
-
-        # for layer in final_volume:
-        #     im = layer.astype(int)*255
-        #     cv2.imshow('image',im.astype('uint8'))
-        #     cv2.waitKey(0)
         
         print "Done"
         return final_volume
 
     def write_to_scad(self, filename = 'test.scad'):
+        """Uses solidpython to export the animation (shapes and their associated transformations) to
+        an OpenSCAD file, ready to be rendered as an STL.
+
+        Inputs:
+        filename: The filename to export to.
+
+        """
 
         if type(self.final_shapes) == NoneType:
             self.render_shapes()
@@ -438,9 +473,9 @@ class Animation(object):
                 #Represent it as a polygon...
                 solid_shapes.append(sp.polygon(solid_shape))
                 #Extrude that polygon up .21mm...
-                solid_shapes[i] = sp.linear_extrude(.2)(solid_shapes[i])
+                solid_shapes[i] = sp.linear_extrude(.21)(solid_shapes[i])
                 #Then translate that extrusion up .2mm...
-                solid_shapes[i] = up(i*.21)(solid_shapes[i])
+                solid_shapes[i] = up(i*.2)(solid_shapes[i])
             shapes_to_export.append(solid_shapes)
 
         #Then union ALL of the extrudes of EVERY shape
@@ -448,6 +483,19 @@ class Animation(object):
         scad_render_to_file(final_export,filename)
 
     def preview_scad(self, filename = 'test.scad', proc = None):
+        """ Automatically opens an openscad file. 
+
+        Still slightly WIP, as we're not completely sure on how to 
+        make shell-esque commands from within Python safe.
+
+        TODO: Sanitize inputs, implement new way of dealing with proc 
+
+        Inputs:
+        filename: the file to open
+        proc: the process that a previous preview_scad call opened. Allows
+        the current preview_scad call to close a previous call so you don't
+        have dozens of OpenSCAD windows open.
+        """
 
         if proc:
             proc.terminate()
@@ -455,6 +503,17 @@ class Animation(object):
         return proc
 
     def render_scad(self, filename = 'test.scad'):
+         """ Automatically renders an openscad file to an STL. 
+
+        Still slightly WIP,
+        as we're not completely sure on how to make shell-esque commands
+        safe.
+
+        TODO: Sanitize inputs, remove waiting (find a better solution)
+
+        Inputs:
+        filename: the file to open
+        """
         output_name = filename.split('.')[0] + '.stl'
 
         proc = subprocess32.Popen(['openscad','-o',output_name,filename])
