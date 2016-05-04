@@ -13,8 +13,6 @@ from math import sqrt
 import solid as sp
 from solid.utils import *
 from types import NoneType
-# import cv2
-import time
 import subprocess32
 
 """Shapes"""
@@ -456,7 +454,6 @@ class Animation(object):
 
         Inputs:
         filename: The filename to export to.
-
         """
 
         if type(self.final_shapes) == NoneType:
@@ -504,7 +501,6 @@ class Animation(object):
 
     def render_scad(self, filename = 'test.scad'):
          """Automatically renders an openscad file to an STL. 
-
         Still slightly WIP,
         as we're not completely sure on how to make shell-esque commands
         safe.
@@ -520,35 +516,3 @@ class Animation(object):
         print "Rendering..."
         proc.wait()
         proc.terminate()
-
-
-
-if __name__ == '__main__':
-    # circle = Circle(5)
-    # square1 = Circle(7.5, (10,0))
-    # square2 = Circle(7.5, (0,10))
-    # square3 = Circle(7.5, (-10,0))
-    # square4 = Circle(7.5, (0,-10))
-
-    # rot = Rotation(360,(0,0))
-    # rot2 = Rotation(-180,(0,0))
-    # di2 = Inward_Harmonic_Dilation(.6,(0,0))
-
-    # anim = Animation(square1,[rot,di2])
-    # anim.add_shape(square2,[rot2,di2])
-    # anim.add_shape(square3,[rot,di2])
-    # anim.add_shape(square4,[rot2,di2])
-    # anim.add_shape(circle)
-
-    hex1 = n_Sided_Polygon(6,12.35*8/sqrt(3))
-    hex2 = n_Sided_Polygon(6,12.35*8/sqrt(3))
-
-    rot1 = Rotation( 120,None,96)
-    rot2 = Rotation(-60,None,96)
-    di   = Inward_Harmonic_Dilation(.3,None,96)
-
-    anim = Animation(hex1,[rot1,di])
-    anim.add_shape(hex2,[rot2,di])
-
-    anim.write_to_scad()
-    # anim.render_volume_data((12,12),240,False)
