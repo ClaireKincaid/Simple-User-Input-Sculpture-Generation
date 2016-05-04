@@ -17,7 +17,7 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         Gtk.Window.__init__(self, title = "Sculpture Generation from Vector Animation")
         self.set_border_width(10)
 
-        #initiates list of shapes
+        #initiates list of shapes, puts in dialog box
         self.Shapes = []
 
         #initializes list of transformations
@@ -187,13 +187,23 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         self.ClearTransButton.connect("clicked", self.on_ClearTransButton_clicked)
         self.grid.attach_next_to(self.ClearTransButton, self.ClearShapesButton, Gtk.PositionType.RIGHT, 5, 1)
 
+        #initializes display shapes button, places in box
+        self.ShapesDisplayButton = Gtk.Button(label = "Display Shapes")
+        self.ShapesDisplayButton.connect("clicked", self.on_ShapesDisplayButton_clicked)
+        self.grid.attach_next_to(self.ShapesDisplayButton, self.ClearShapesButton, Gtk.PositionType.BOTTOM, 4, 5)
+
+        #initializes display transformations button, places in box
+        self.TransformationsDisplayButton = Gtk.Button(label = "Display Transformations")
+        self.TransformationsDisplayButton.connect("clicked", self.on_TransDisplayButton_clicked)
+        self.grid.attach_next_to(self.TransformationsDisplayButton, self.ShapesDisplayButton, Gtk.PositionType.RIGHT, 5, 5)
+
         #intializes Preview button, puts in window
         self.PreviewButton = Gtk.Button(label = "PREVIEW")
         self.PreviewButton.connect("clicked", self.on_PreviewButton_clicked)
-        self.grid.attach_next_to(self.PreviewButton, self.ClearShapesButton, Gtk.PositionType.BOTTOM, 4, 1)
+        self.grid.attach_next_to(self.PreviewButton, self.ShapesDisplayButton, Gtk.PositionType.BOTTOM, 4, 1)
 
         #initializes Render button, puts in window
-        self.RenderButton = Gtk.Button(label = "RENDER")
+        self.RenderButton = Gtk.Button(label = "EXPORT")
         self.RenderButton.connect("clicked", self.on_RenderButton_clicked)
         self.grid.attach_next_to(self.RenderButton, self.PreviewButton, Gtk.PositionType.RIGHT, 5, 1)
 
@@ -202,7 +212,6 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         Length = float(Gtk.Entry.get_text(self.SquareLengthEntry))
         Center = tuple(map(int, Gtk.Entry.get_text(self.SquareCenterEntry).split(",")))
         Angle = float(Gtk.Entry.get_text(self.SquareAngleEntry))
-        print Center
         Square = Geometry.Square(Length, Center, Angle)
         self.Shapes.append(Square)
 
@@ -272,11 +281,22 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         self.Transformations = []
         print self.Transformations
 
+    #when Display Transformation button clicked, prints transformations in terminal
+    def on_TransDisplayButton_clicked(self, widget):
+        print self.Transformations
+
+    #when Display Shapes button clicked, prints shapes in terminal
+    def on_ShapesDisplayButton_clicked(self, widget):
+        print self.Shapes
+
     #when Preview button clicked, previews in OpenSCAD
     def on_PreviewButton_clicked(self, widget):
-        pass
+        Animation = Geometry.Animation(self.Shapes, self.Transformations)
+        Animation.write_to_scad()
+        Animation.preview_scad()
 
     #when Render button clicked, renders stl of sculpture
     def on_RenderButton_clicked(self, widget):
-        pass
-
+        Animation = Geometry.Animation(self.Shapes, self.Transformations)
+        Animation.write_to_scad()
+        Animation.preview_scad()
