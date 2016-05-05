@@ -245,9 +245,7 @@ class Sculpture(HasTraits):
         
         solid.save(name)
 
-
 #Here be UI 
-
 
 class Visualization(HasTraits):
     threshold = Range(0, 1., .5)
