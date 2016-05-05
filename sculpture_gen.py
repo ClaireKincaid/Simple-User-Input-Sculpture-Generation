@@ -1,29 +1,34 @@
 print "Loading libraries..."
+from stl import mesh
 import threading
 import time
 import pickle
 import os
 from skimage import measure
+from noise import pnoise3, snoise3
 import numpy as np
-from stl import mesh
 import cv2
 import pyglet
 from mayavi import mlab
+# from solid_extrude import solid_extrude
+# from bloby_extrude import bloby_extrude
 from traits.api import HasTraits, Instance,  Range, on_trait_change
 from traitsui.api import View, Item, HGroup
 from mayavi.core.ui.api import SceneEditor, MlabSceneModel
 from textblob import TextBlob
-from noise import pnoise3, snoise3
 import random
 print "Done"
+
+
+
 
 class Sculpture(HasTraits):
     def __init__(self):
         self.noise_file = 'loaded_noise5.p' #Initializes the noise as a pickled file.
-        self.matrix_size = 120  #pixels
+        self.matrix_size = 240  #pixels
         self.noise_scale = 3/float(240)  #the scale perlin noise is generated at.
         self.noise = self.load_noise()
-        self.small_noise = self.compress_noise(1)
+        self.small_noise = self.compress_noise(1)     #This is the noise that is used to create lower resolution geometries.
         self.scale = self.matrix_size/(3)
         
     def load_noise(self):
@@ -98,8 +103,8 @@ class Sculpture(HasTraits):
         return a
 
     def bloby_extrude(self, threshold):
-
-        self.img_cp = cv2.resize(self.img, (self.matrix_size, self.matrix_size))
+        self.small_matrix_size = len(self.small_noise)
+        self.img_cp = cv2.resize(self.img, (self.small_matrix_size, self.small_matrix_size))
         normalized_pixels = np.array(self.img_cp/255.0)
         input_with_noise = self.small_noise * np.sqrt(normalized_pixels)  + np.power(normalized_pixels, 6)
         input_with_noise[input_with_noise<0.9] = input_with_noise[input_with_noise<0.9] +0.1
@@ -108,6 +113,10 @@ class Sculpture(HasTraits):
         input_with_noise[input_with_noise>threshold] = 1
         return input_with_noise
 
+    def interpret_input(self):
+        """Intreprets the user input and returns a lambda function that will generate a transformation matrix \
+        based on the input"""
+        pass
 
     def create_iso_surface(self, threshold, second=False):
         volume_data=self.volume_data  #Sets the volume data as that of the sculpture
@@ -188,17 +197,20 @@ class Sculpture(HasTraits):
         Visualization().configure_traits()
         self.create_iso_surface(.4)
 
-    # def i_menu(self):
-    #     """Runs the image transformation menu item."""
+        # def i_menu(self):
+        #   """Runs the image transformation menu item."""
+        
     def transform_matrix(self):
         """Creates a transformation matrix to impose on 3d volume data."""
-
+        pass
 
     def create_image_matrix(self, degrees=180):
-        """This creates a 3d matrix of an image with rotations acting in the xy plane"""
-        #This code is not yet integrated into the menu, but it works. It needs
-        #to be able to take user text input to create transformation matrices that 
-        #can act on any volume data.
+        """
+        This creates a 3d matrix of an image with rotations acting in the xy plane
+        This code is not yet integrated into the menu, but it works. It needs
+        to be able to take user text input to create transformation matrices that 
+        can act on any volume data.
+        """
 
         width = self.matrix_size
         rows,cols = self.img_cp.shape   #Image cp is the compressed image. 
@@ -229,10 +241,13 @@ class Sculpture(HasTraits):
         for i, f in enumerate(faces):
             for j in range(3):
                 solid.vectors[i][j] = verts[f[j],:]
+
         
         solid.save(name)
 
-#Here be UI    
+
+#Here be UI 
+
 
 class Visualization(HasTraits):
     threshold = Range(0, 1., .5)
@@ -262,10 +277,13 @@ class Visualization(HasTraits):
                     editor=SceneEditor()),
                 HGroup('threshold', 'compression'), resizable=True)  #Remember to put in the sliders you want in here.
 
+
+
+
 if __name__ == '__main__':
 
     my_sculpture = Sculpture()
-    my_sculpture.noise = my_sculpture.compress_noise(120/my_sculpture.matrix_size - 1)
+    my_sculpture.noise = my_sculpture.compress_noise(240/my_sculpture.matrix_size - 1)
     my_sculpture.volume_data = np.lib.pad(my_sculpture.noise, ((1,1),(1,1),(1,1)), 'constant')
     
     while True:
