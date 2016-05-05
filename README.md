@@ -3,12 +3,14 @@ Coleman Ellis, Claire Kincaid, Maximillian Schommer
 
 Software Design Spring 2016
 
-## Description
+#### Description ####
+
 SUISG is both a toolset for computationally generating sculptures, as well as a GUI that makes it fast and easy to design compelling sculptures.
 
 SUISG was born out of the desire for a convenient way to develop artistically and compelling art pieces without the use of unintuitive CAD software. It works at the intersection of three parts: sculptures generated via shapes and transformations over time, sculptures generated via perlin noise, and a GUI that ties the two together.
 
-## Getting Started
+### Getting Started ###
+
 SUISG has a fair few packages that need to be installed. These commands should get everything up and running:
 
 ```
@@ -30,9 +32,9 @@ Lastly, head over here https://pypi.python.org/pypi/noise/, download noise-1.2.2
 All of the previous commands might require root access, depending on your system setup.
 
 
-## Usage
+#### Usage ####
 
-### Vector Animations
+### Vector Animations ###
 
 Using the Geometry program, you can define shapes, transformations to apply to those shapes over time, and then output those shapes to an OpenSCAD file to render them as an STL (OpenSCAD is fairly slow, a more efficient solution is pending).
 
@@ -78,9 +80,25 @@ anim.write_to_scad('capstone.scad')
 
 Just a warning though, OpenSCAD takes about 1~2 minutes per shape to render as an STL.
 
-### Perlin Noise
+### Perlin Noise ###
 
-### GUI
+To run sculpture_gen.py, enter the following command into your terminal
+
+$python sculpture_gen.py
+
+The program will initialize its data, and display 'loading' and 'done' indicators. Once this is complete, then you will be prompted how you feel about sculptures. This requires a text input of a description of your feelings about sculptures. If you answer in a negative fashion, you will not be allowed to continue and receive a rebuke. If you answer in a neutral, or positive way you will be rewarded with access to an amazing, sculpture making program. 
+
+Now you are in the main menu. You can choose one of three options, as described in the menu. Follow the prompts as they appear. 
+
+If you choose 'm', then you are able to enter any mathematical definition for a volume. This means that a sphere would be x**2+y**2+z**2 < 1 would be a valid input. Use np.sin(x), np.cos(x), np.log(x), etc. for more advanced mathematical functions. This function uses an eval statment, so breaking it is not hard. Do so at your own risk.
+The object entered will then be displayed, then you will be prompted for another shape, then a boolean operation. This will create a merged solid of the two you defined. This operation will continue using the previous solid as the basis of the next pair. 
+
+If you choose 'b',  then you should enter a grayscale image, formatted as 'example.png'. Use only files in the programs local directory. Then the GUI will allow you to mess with settings for defining your sculpture. 
+
+Note that you can not go back once you are in a menu item, only foward. Exit the program and restart if you would like to explore a different menu item. 
+
+### GUI ###
+
 Using the simple GUI, you can easily interface with the Geometry Program and the Sculpture_gen program to generate sculptures without typing complicated sequences of commands into the terminal.  The GUI is organized into three pieces: A main window that prompts the user to choose a method of sculpture generation, a dialog that allows the user to interface easily with Geometry.py, and a dialog that allows the user to interface with sculpture_gen.py.
 
 '''Main Prompt'''
