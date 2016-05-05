@@ -102,11 +102,6 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         self.RotCenterEntry.set_text("Rotation Center, x, y")
         self.grid.attach_next_to(self.RotCenterEntry, self.RotAngleEntry, Gtk.PositionType.RIGHT, 2, 1)
 
-        #initializes layers entry for add rot, puts in window
-        self.RotLayersEntry = Gtk.Entry()
-        self.RotLayersEntry.set_text("Number of Layers")
-        self.grid.attach_next_to(self.RotLayersEntry, self.RotCenterEntry, Gtk.PositionType.RIGHT, 2, 1)
-
         #initializes add dilation button, puts in window
         self.AddDilButton = Gtk.Button(label = "Add a Dilation")
         self.AddDilButton.connect("clicked", self.on_AddDilButton_clicked)
@@ -122,11 +117,6 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         self.DilCenterEntry.set_text("Dilation Center, x, y")
         self.grid.attach_next_to(self.DilCenterEntry, self.DilScaleEntry, Gtk.PositionType.RIGHT, 2, 1)
 
-        #initializes layers entry for add dil, puts in window
-        self.DilLayersEntry = Gtk.Entry()
-        self.DilLayersEntry.set_text("Number of Layers")
-        self.grid.attach_next_to(self.DilLayersEntry, self.DilCenterEntry, Gtk.PositionType.RIGHT, 2, 1)
-
         #initializes add Cosine Harmonic Dilation button, puts in window
         self.AddCosHarmDilButton = Gtk.Button(label = "Add a Cosine Harmonic Dilation")
         self.AddCosHarmDilButton.connect("clicked", self.on_AddCosHarmDilButton_clicked)
@@ -141,11 +131,6 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         self.CosHarmDilCenterEntry = Gtk.Entry()
         self.CosHarmDilCenterEntry.set_text("Dilation Center, x, y")
         self.grid.attach_next_to(self.CosHarmDilCenterEntry, self.CosHarmDilAngleEntry, Gtk.PositionType.RIGHT, 2, 1)
-
-        # #initializes layers entry for cosharmdil, puts in window
-        self.CosHarmDilLayersEntry = Gtk.Entry()
-        self.CosHarmDilLayersEntry.set_text("Number of Layers")
-        self.grid.attach_next_to(self.CosHarmDilLayersEntry, self.CosHarmDilCenterEntry, Gtk.PositionType.RIGHT, 2, 1)
 
         #initializes Add Inward Harmonic Dilation button, puts in window
         self.AddInHarmDilButton = Gtk.Button(label = "Add an Inward Harmonic Dilation")
@@ -163,14 +148,14 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         self.grid.attach_next_to(self.InHarmDilCenterEntry, self.InHarmDilScaleEntry, Gtk.PositionType.RIGHT, 2, 1)
 
         #initializes layers entry for InHarmDil, puts in window
-        self.InHarmDilLayersEntry = Gtk.Entry()
-        self.InHarmDilLayersEntry.set_text("Number of Layers")
-        self.grid.attach_next_to(self.InHarmDilLayersEntry, self.InHarmDilCenterEntry, Gtk.PositionType.RIGHT, 2, 1)
+        self.TransformationLayersEntry = Gtk.Entry()
+        self.TransformationLayersEntry.set_text("Number of Layers")
+        self.grid.attach_next_to(self.TransformationLayersEntry, self.AddInHarmDilButton, Gtk.PositionType.BOTTOM, 9, 1)
 
         #initializes undo shape button, puts in window
         self.UndoShapeButton = Gtk.Button(label = "Undo Shape")
         self.UndoShapeButton.connect("clicked", self.on_UndoShapeButton_clicked)
-        self.grid.attach_next_to(self.UndoShapeButton, self.AddInHarmDilButton, Gtk.PositionType.BOTTOM, 4, 1)
+        self.grid.attach_next_to(self.UndoShapeButton, self.TransformationLayersEntry, Gtk.PositionType.BOTTOM, 4, 1)
 
         #initializes undo transformation button, puts in window
         self.UndoTransButton = Gtk.Button(label = "Undo Transformation")
@@ -235,7 +220,7 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
     def on_AddRotButton_clicked(self, widget):
         Angle = float(Gtk.Entry.get_text(self.RotAngleEntry))
         Center = tuple(map(int, Gtk.Entry.get_text(self.RotCenterEntry).split(",")))
-        Depth = int(Gtk.Entry.get_text(self.RotLayersEntry))
+        Depth = int(Gtk.Entry.get_text(self.TransformationLayersEntry))
         Rotation = Geometry.Rotation(Angle, Center, Depth)
         self.Transformations.append(Rotation)
 
@@ -243,7 +228,7 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
     def on_AddDilButton_clicked(self, widget):
         Factor = float(Gtk.Entry.get_text(self.DilScaleEntry))
         Center = tuple(map(int, Gtk.Entry.get_text(self.DilCenterEntry).split(",")))
-        Depth = int(Gtk.Entry.get_text(self.DilLayersEntry))
+        Depth = int(Gtk.Entry.get_text(self.TransformationLayersEntry))
         Dilation = Geometry.Dilation(Factor, Center, Depth)
         self.Transformations.append(Dilation)
 
@@ -251,7 +236,7 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
     def on_AddCosHarmDilButton_clicked(self, widget):
         Angle = float(Gtk.Entry.get_text(self.CosHarmDilAngleEntry))
         Center = tuple(map(int, Gtk.Entry.get_text(self.CosHarmDilCenterEntry).split(",")))
-        Depth = int(Gtk.Entry.get_text(self.CosHarmDilLayersEntry))
+        Depth = int(Gtk.Entry.get_text(self.TransformationLayersEntry))
         Dilation = Geometry.Cosine_Harmonic_Dilation(Angle, Center, Depth)
         self.Transformations.append(Dilation)
 
@@ -259,7 +244,7 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
     def on_AddInHarmDilButton_clicked(self, widget):
         Factor = float(Gtk.Entry.get_text(self.InHarmDilScaleEntry))
         Center = tuple(map(int, Gtk.Entry.get_text(self.InHarmDilCenterEntry).split(",")))
-        Depth = int(Gtk.Entry.get_text(self.CosHarmDilLayersEntry))
+        Depth = int(Gtk.Entry.get_text(self.TransformationLayersEntry))
         Dilation = Geometry.Inward_Harmonic_Dilation
         self.Transformations.append(Dilation)
 
