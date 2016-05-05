@@ -245,7 +245,7 @@ class VectorWindow(Gtk.Window):  #sub class Gtk window to define my window
         Factor = float(Gtk.Entry.get_text(self.InHarmDilScaleEntry))
         Center = tuple(map(int, Gtk.Entry.get_text(self.InHarmDilCenterEntry).split(",")))
         Depth = int(Gtk.Entry.get_text(self.TransformationLayersEntry))
-        Dilation = Geometry.Inward_Harmonic_Dilation
+        Dilation = Geometry.Inward_Harmonic_Dilation(Factor, Center, Depth)
         self.Transformations.append(Dilation)
 
     #when Undo shape button clicked, removes last shape added
